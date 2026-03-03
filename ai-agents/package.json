@@ -1,0 +1,24 @@
+{
+  "name": "ai-agents",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "agent:niche": "tsx src/agents/niche-researcher/index.ts",
+    "agent:validate": "tsx src/agents/business-validator/index.ts",
+    "agent:competitive": "tsx src/agents/competitive-intel/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.98.0",
+    "dotenv": "^17.3.1",
+    "openai": "^6.25.0",
+    "serpapi": "^2.2.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
