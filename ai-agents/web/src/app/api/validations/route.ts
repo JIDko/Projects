@@ -8,6 +8,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = req.nextUrl;
     const verdict = searchParams.get('verdict');
     const search = searchParams.get('search');
+    const nicheId = searchParams.get('nicheId');
+    const limit = searchParams.get('limit');
     const sort = searchParams.get('sort') ?? 'created_at';
     const order = searchParams.get('order') ?? 'desc';
 
@@ -16,11 +18,13 @@ export async function GET(req: NextRequest) {
       .select('*')
       .eq('status', 'active');
 
+    if (nicheId) query = query.eq('niche_id', nicheId);
     if (verdict) query = query.eq('verdict', verdict);
     if (search) query = query.ilike('idea', `%${search}%`);
 
     const sortCol = ALLOWED_SORT.includes(sort) ? sort : 'created_at';
-    query = query.order(sortCol, { ascending: order === 'asc' }).limit(200);
+    const rowLimit = limit ? Math.min(parseInt(limit, 10), 200) : 200;
+    query = query.order(sortCol, { ascending: order === 'asc' }).limit(rowLimit);
 
     const { data, error } = await query;
 

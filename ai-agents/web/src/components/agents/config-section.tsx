@@ -10,14 +10,16 @@ interface Props {
 
 export function ConfigSection({ title, description, children }: Props) {
   return (
-    <div className="glass-card p-6 space-y-4">
-      <div>
-        <h3 className="text-base font-medium">{title}</h3>
-        {description && (
-          <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
-        )}
+    <div className="neon-border">
+      <div className="neon-border-inner space-y-4">
+        <div>
+          <h3 className="text-base font-medium">{title}</h3>
+          {description && (
+            <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
+          )}
+        </div>
+        {children}
       </div>
-      {children}
     </div>
   );
 }

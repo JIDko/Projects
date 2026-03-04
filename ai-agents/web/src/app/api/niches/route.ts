@@ -28,7 +28,43 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data ?? []);
+    // Enrich with pipeline progress flags
+    const { data: vals } = await supabase
+      .from('validations')
+      .select('id, niche_id');
+
+    const { data: comps } = await supabase
+      .from('competitive_analyses')
+      .select('id, validation_id');
+
+    const { data: specs } = await supabase
+      .from('product_specs')
+      .select('competitive_analysis_id')
+      .eq('status', 'active');
+
+    const validatedNicheIds = new Set(vals?.map(v => v.niche_id).filter(Boolean));
+    const compValIds = new Set(comps?.map(c => c.validation_id));
+    const analyzedNicheIds = new Set(
+      vals?.filter(v => compValIds.has(v.id) && v.niche_id).map(v => v.niche_id)
+    );
+
+    // Build set of niche IDs that have product specs
+    const specCompIds = new Set(specs?.map(s => s.competitive_analysis_id));
+    const specValIds = new Set(
+      comps?.filter(c => specCompIds.has(c.id)).map(c => c.validation_id)
+    );
+    const specNicheIds = new Set(
+      vals?.filter(v => specValIds.has(v.id) && v.niche_id).map(v => v.niche_id)
+    );
+
+    const enriched = (data ?? []).map(n => ({
+      ...n,
+      has_validation: validatedNicheIds.has(n.id),
+      has_competitors: analyzedNicheIds.has(n.id),
+      has_product_spec: specNicheIds.has(n.id),
+    }));
+
+    return NextResponse.json(enriched);
   } catch (err) {
     console.error('[api/niches]', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

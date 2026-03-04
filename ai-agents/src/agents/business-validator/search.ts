@@ -1,5 +1,4 @@
-import { getJson } from 'serpapi';
-import { config } from '../../shared/config.js';
+import { serpApiGet } from '../../shared/serpapi-client.js';
 import { logger } from '../../shared/logger.js';
 
 export interface SearchResult {
@@ -10,8 +9,7 @@ export interface SearchResult {
 async function searchSingle(query: string): Promise<SearchResult> {
   logger.info(`Searching: "${query}"`);
 
-  const response = await getJson({
-    api_key: config.serpapi.apiKey,
+  const response = await serpApiGet({
     engine: 'google',
     q: query,
     num: 10,

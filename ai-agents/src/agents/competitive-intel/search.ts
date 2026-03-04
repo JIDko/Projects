@@ -1,5 +1,4 @@
-import { getJson } from 'serpapi';
-import { config } from '../../shared/config.js';
+import { serpApiGet } from '../../shared/serpapi-client.js';
 import { logger } from '../../shared/logger.js';
 
 export interface SearchResult {
@@ -7,14 +6,15 @@ export interface SearchResult {
   snippets: string[];
 }
 
-async function searchSingle(query: string): Promise<SearchResult> {
-  logger.info(`Searching: "${query}"`);
+async function searchSingle(query: string, gl = 'us', hl = 'en'): Promise<SearchResult> {
+  logger.info(`Searching [${gl}/${hl}]: "${query}"`);
 
-  const response = await getJson({
-    api_key: config.serpapi.apiKey,
+  const response = await serpApiGet({
     engine: 'google',
     q: query,
     num: 10,
+    gl,
+    hl,
   });
 
   const snippets: string[] = [];
@@ -38,24 +38,55 @@ async function searchSingle(query: string): Promise<SearchResult> {
 }
 
 /**
- * Build discovery queries to find competitors for the idea.
+ * Extract a short name from the full idea text.
+ * The `idea` field often contains a long description; we only need the title
+ * (everything before the first period that is followed by a space or end).
  */
-export function buildDiscoveryQueries(idea: string, market: string, competitorHints?: string[]): string[] {
-  const year = new Date().getFullYear();
-  const geo = market !== 'global english-speaking' ? ` ${market}` : '';
+function extractShortName(idea: string): string {
+  const firstSentence = idea.split(/\.\s/)[0] ?? idea;
+  // Cap at 80 chars to keep search queries reasonable
+  return firstSentence.length > 80 ? firstSentence.slice(0, 80) : firstSentence;
+}
 
-  const queries = [
-    `best ${idea} tools software ${year}`,
-    `top ${idea} competitors comparison ${year}`,
-    `${idea} alternatives ${year}${geo}`,
-    `${idea} market leaders${geo}`,
-    `${idea} vs comparison review ${year}`,
+/**
+ * Build discovery queries to find competitors for the idea.
+ * Priority: US/EU market first, then market-specific queries last.
+ * Each query has { q, gl, hl } for SerpAPI geo-targeting.
+ */
+export function buildDiscoveryQueries(
+  idea: string, market: string, competitorHints?: string[],
+): Array<{ q: string; gl: string; hl: string }> {
+  const year = new Date().getFullYear();
+  const name = extractShortName(idea);
+
+  // --- Priority 1: US/global English market (always first) ---
+  const queries: Array<{ q: string; gl: string; hl: string }> = [
+    { q: `best ${name} tools software ${year}`, gl: 'us', hl: 'en' },
+    { q: `top ${name} competitors comparison ${year}`, gl: 'us', hl: 'en' },
+    { q: `${name} alternatives ${year}`, gl: 'us', hl: 'en' },
+    { q: `${name} market leaders SaaS`, gl: 'us', hl: 'en' },
+    { q: `${name} vs comparison review ${year}`, gl: 'us', hl: 'en' },
   ];
 
-  // If we have hints from the validation report, add a targeted query
+  // --- Priority 2: EU market ---
+  queries.push(
+    { q: `${name} software Europe ${year}`, gl: 'uk', hl: 'en' },
+    { q: `${name} competitors UK Europe ${year}`, gl: 'uk', hl: 'en' },
+  );
+
+  // Hints from the validation report
   if (competitorHints && competitorHints.length > 0) {
     const top = competitorHints.slice(0, 3).join(' vs ');
-    queries.push(`${top} comparison ${year}`);
+    queries.push({ q: `${top} comparison ${year}`, gl: 'us', hl: 'en' });
+  }
+
+  // --- Priority 3: Market-specific (if not already English-speaking) ---
+  const isEnglishMarket = /global|english|us|uk|au|ca/i.test(market);
+  if (!isEnglishMarket && market) {
+    queries.push(
+      { q: `${name} ${market} ${year}`, gl: 'us', hl: 'en' },
+      { q: `лучшие ${name} сервисы ${year}`, gl: 'ru', hl: 'ru' },
+    );
   }
 
   return queries;
@@ -63,28 +94,38 @@ export function buildDiscoveryQueries(idea: string, market: string, competitorHi
 
 /**
  * Build deep-dive queries for a single competitor.
+ * All deep-dive queries are in English (US) since competitor names are typically global.
  */
-export function buildDeepDiveQueries(competitorName: string, idea: string, market: string): string[] {
+export function buildDeepDiveQueries(
+  competitorName: string, idea: string, _market: string,
+): Array<{ q: string; gl: string; hl: string }> {
   const year = new Date().getFullYear();
-  const geo = market !== 'global english-speaking' ? ` ${market}` : '';
 
   return [
-    `${competitorName} features product review ${year}`,
-    `${competitorName} pricing plans ${year}`,
-    `${competitorName} target audience customers`,
-    `${competitorName} reviews complaints ${year}`,
-    `${competitorName} marketing strategy growth`,
-    `${competitorName} technology stack`,
-    `${competitorName} strengths weaknesses analysis`,
-    `${competitorName} vs ${idea} alternatives comparison${geo}`,
+    { q: `${competitorName} features product review ${year}`, gl: 'us', hl: 'en' },
+    { q: `${competitorName} pricing plans ${year}`, gl: 'us', hl: 'en' },
+    { q: `${competitorName} target audience customers`, gl: 'us', hl: 'en' },
+    { q: `${competitorName} reviews complaints ${year}`, gl: 'us', hl: 'en' },
+    { q: `${competitorName} marketing strategy growth`, gl: 'us', hl: 'en' },
+    { q: `${competitorName} technology stack`, gl: 'us', hl: 'en' },
+    { q: `${competitorName} strengths weaknesses analysis`, gl: 'us', hl: 'en' },
+    { q: `${competitorName} vs ${extractShortName(idea)} alternatives comparison`, gl: 'us', hl: 'en' },
   ];
 }
 
 /**
  * Run all search queries in parallel.
+ * Accepts either plain strings (defaults to US/en) or objects with { q, gl, hl }.
  */
-export async function runSearches(queries: string[]): Promise<SearchResult[]> {
-  const results = await Promise.allSettled(queries.map(q => searchSingle(q)));
+export async function runSearches(
+  queries: Array<string | { q: string; gl: string; hl: string }>,
+): Promise<SearchResult[]> {
+  const results = await Promise.allSettled(
+    queries.map(entry => {
+      if (typeof entry === 'string') return searchSingle(entry);
+      return searchSingle(entry.q, entry.gl, entry.hl);
+    }),
+  );
 
   const successful: SearchResult[] = [];
   for (const result of results) {

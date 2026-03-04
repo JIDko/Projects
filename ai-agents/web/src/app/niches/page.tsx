@@ -1,114 +1,125 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { Trash2, ArrowUpDown } from 'lucide-react';
 import { useNiches } from '@/hooks/use-niches';
-import { NichesFilters } from '@/components/niches/niches-filters';
-import { NichesTable } from '@/components/niches/niches-table';
-import { NicheDetailSheet } from '@/components/niches/niche-detail-sheet';
-import type { Niche } from '@/lib/types';
+import { useFavorites } from '@/hooks/use-favorites';
+import { NicheCard } from '@/components/niches/niche-card';
+import { ParticleNetwork } from '@/components/niches/particle-network';
+
+type Filter = 'active' | 'rejected';
+type SortDir = 'desc' | 'asc';
+
+const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 
 export default function NichesPage() {
-  const [status, setStatus] = useState('');
-  const [competition, setCompetition] = useState('');
-  const [search, setSearch] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [sortField, setSortField] = useState('total_score');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [selectedNiche, setSelectedNiche] = useState<Niche | null>(null);
+  const router = useRouter();
+  const [filter, setFilter] = useState<Filter>('active');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [trashMode, setTrashMode] = useState(false);
 
-  const { niches, isLoading, mutate } = useNiches({
-    status,
-    competition,
-    search,
-    dateFrom,
-    dateTo,
-    sort: sortField,
-    order: sortOrder,
+  const { niches, isLoading } = useNiches({
+    status: trashMode ? 'active' : filter,
+    sort: 'created_at',
+    order: sortDir,
   });
 
-  const handleSort = useCallback(
-    (field: string) => {
-      if (field === sortField) {
-        setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-      } else {
-        setSortField(field);
-        setSortOrder('desc');
-      }
-    },
-    [sortField],
-  );
+  const { isFavorited, toggle } = useFavorites();
 
-  const handleStatusChange = useCallback(
-    async (id: string, newStatus: string) => {
-      await fetch(`/api/niches/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      mutate();
-      setSelectedNiche(null);
-    },
-    [mutate],
-  );
-
-  const counts = useMemo(() => {
-    return {
-      total: niches.length,
-      active: niches.filter((n) => n.status === 'active').length,
-    };
-  }, [niches]);
+  // Trash: active niches older than 7 days that are NOT favorited
+  const displayed = useMemo(() => {
+    if (!trashMode) return niches;
+    const cutoff = Date.now() - SEVEN_DAYS;
+    return niches.filter(n => {
+      const created = new Date(n.created_at).getTime();
+      return created < cutoff && !isFavorited(n.id);
+    });
+  }, [niches, trashMode, isFavorited]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Ниши</h2>
-          <p className="text-muted-foreground text-sm mt-1">
-            {counts.total} найдено &middot; {counts.active} активных
+    <>
+    <ParticleNetwork />
+    <div className="p-6 pt-20 space-y-4 relative z-[1]">
+      {/* Top bar: trash */}
+      <div className="flex items-center justify-end">
+        <button
+          onClick={() => setTrashMode(v => !v)}
+          className="nav-glitch-icon"
+        >
+          <Trash2
+            className={`h-6 w-6 transition-colors ${
+              trashMode ? 'text-destructive' : 'text-muted-foreground/40 hover:text-muted-foreground'
+            }`}
+            strokeWidth={1.5}
+          />
+        </button>
+      </div>
+
+      {/* Filters row */}
+      {!trashMode && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setFilter('active')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+              filter === 'active'
+                ? 'bg-accent/15 text-accent'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            В работе
+          </button>
+          <button
+            onClick={() => setFilter('rejected')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+              filter === 'rejected'
+                ? 'bg-destructive/15 text-destructive'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Отклонённые
+          </button>
+
+          <div className="flex-1" />
+
+          <button
+            onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowUpDown className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <span>{sortDir === 'desc' ? 'Новые' : 'Старые'}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Grid */}
+      {isLoading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {[...Array(10)].map((_, i) => (
+            <div key={i} className="glass-card aspect-square animate-pulse" />
+          ))}
+        </div>
+      ) : displayed.length === 0 ? (
+        <div className="glass-card p-12 text-center">
+          <p className="text-muted-foreground text-sm">
+            {trashMode ? 'Корзина пуста' : 'Ниши не найдены'}
           </p>
         </div>
-      </div>
-
-      <NichesFilters
-        status={status}
-        competition={competition}
-        search={search}
-        dateFrom={dateFrom}
-        dateTo={dateTo}
-        onStatusChange={setStatus}
-        onCompetitionChange={setCompetition}
-        onSearchChange={setSearch}
-        onDateFromChange={setDateFrom}
-        onDateToChange={setDateTo}
-      />
-
-      <div className="glass-card overflow-hidden">
-        {isLoading ? (
-          <div className="space-y-0">
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={i}
-                className="h-12 border-b border-border/50 animate-pulse bg-muted/10"
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {displayed.map((niche, i) => (
+            <div key={niche.id} className="card-stagger" style={{ animationDelay: `${0.05 * Math.min(i, 11)}s` }}>
+              <NicheCard
+                niche={niche}
+                onClick={() => router.push(`/niches/${niche.id}`)}
+                favorited={isFavorited(niche.id)}
+                onToggleFavorite={() => toggle(niche.id)}
               />
-            ))}
-          </div>
-        ) : (
-          <NichesTable
-            niches={niches}
-            sortField={sortField}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-            onSelect={setSelectedNiche}
-          />
-        )}
-      </div>
-
-      <NicheDetailSheet
-        niche={selectedNiche}
-        onClose={() => setSelectedNiche(null)}
-        onStatusChange={handleStatusChange}
-      />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
+    </>
   );
 }

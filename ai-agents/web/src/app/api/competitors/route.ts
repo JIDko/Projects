@@ -7,6 +7,8 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
     const search = searchParams.get('search');
+    const validationId = searchParams.get('validationId');
+    const limit = searchParams.get('limit');
     const sort = searchParams.get('sort') ?? 'created_at';
     const order = searchParams.get('order') ?? 'desc';
 
@@ -15,10 +17,12 @@ export async function GET(req: NextRequest) {
       .select('*')
       .eq('status', 'active');
 
+    if (validationId) query = query.eq('validation_id', validationId);
     if (search) query = query.ilike('idea', `%${search}%`);
 
     const sortCol = ALLOWED_SORT.includes(sort) ? sort : 'created_at';
-    query = query.order(sortCol, { ascending: order === 'asc' }).limit(100);
+    const rowLimit = limit ? Math.min(parseInt(limit, 10), 100) : 100;
+    query = query.order(sortCol, { ascending: order === 'asc' }).limit(rowLimit);
 
     const { data, error } = await query;
 

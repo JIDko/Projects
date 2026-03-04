@@ -19,6 +19,18 @@ export interface Niche {
   status: 'active' | 'rejected' | 'archived';
   created_at: string;
   source_pain_ids?: string[];
+  // v2 Signal Detector fields
+  evidence_summary?: string;
+  signal_count?: number;
+  unique_source_count?: number;
+  avg_pain_intensity?: number;
+  existing_competitors?: string[];
+  cluster_id?: string;
+  sample_signals?: string[];
+  // enriched by API
+  has_validation?: boolean;
+  has_competitors?: boolean;
+  has_product_spec?: boolean;
 }
 
 export interface CompetitorProfile {
@@ -130,6 +142,77 @@ export interface DashboardStats {
   avgScore: number;
   bestNiche: Niche | null;
   totalCycles: number;
+}
+
+export interface ProductSpec {
+  id: string;
+  competitive_analysis_id: string;
+  idea: string;
+  market: string;
+  vision: {
+    product_name: string;
+    one_liner: string;
+    problem_statement: string;
+    solution_approach: string;
+    key_differentiators: string[];
+    north_star_metric: string;
+  };
+  audience: {
+    primary_persona: {
+      name: string;
+      role: string;
+      pain_points: string[];
+      goals: string[];
+      current_solutions: string[];
+    };
+    secondary_personas: Array<{ name: string; role: string; pain_points: string[]; goals: string[] }>;
+    tam_sam_som: { tam: string; sam: string; som: string };
+  };
+  features: {
+    mvp_features: Array<{ name: string; description: string; priority: string; effort_days: number; competitive_advantage: string }>;
+    v2_features: Array<{ name: string; description: string; priority: string; effort_days: number; competitive_advantage: string }>;
+    explicitly_excluded: string[];
+  };
+  user_flows: {
+    onboarding_flow: string[];
+    core_loop: string;
+    aha_moment: string;
+    retention_hooks: string[];
+  };
+  information_architecture: {
+    pages: Array<{ name: string; purpose: string; key_components: string[] }>;
+    navigation_model: string;
+    data_model_overview: string;
+  };
+  monetization: {
+    model: string;
+    pricing_tiers: Array<{ name: string; price: string; features: string[]; target: string }>;
+    revenue_projections: { month_6: string; month_12: string; assumptions: string[] };
+    competitor_pricing_context: string;
+  };
+  gtm: {
+    launch_strategy: string;
+    channels: Array<{ channel: string; priority: string; strategy: string; expected_cac: string }>;
+    content_strategy: string;
+    partnerships: string[];
+    first_100_users: string;
+  };
+  success_criteria: {
+    week_1: string[];
+    month_1: string[];
+    month_3: string[];
+    kill_criteria: string[];
+  };
+  total_score: number;
+  score_breakdown: Record<string, number>;
+  readiness: 'READY' | 'NEEDS_REVIEW' | 'INCOMPLETE';
+  total_searches: number;
+  model_used: string;
+  tokens_used: { input: number; output: number } | null;
+  searches_performed: string[];
+  cycle_id: string | null;
+  status: 'active' | 'archived';
+  created_at: string;
 }
 
 export interface AgentConfig {

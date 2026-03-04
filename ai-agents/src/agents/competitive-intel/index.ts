@@ -53,7 +53,7 @@ async function main() {
     logger.info('\n--- Phase 1: Discovery ---');
 
     const discoveryQueries = buildDiscoveryQueries(idea, market, competitorHints);
-    allSearchQueries.push(...discoveryQueries);
+    allSearchQueries.push(...discoveryQueries.map(q => typeof q === 'string' ? q : q.q));
 
     const discoverySearchResults = await runSearches(discoveryQueries);
     const discoveryContext = formatSearchContext(discoverySearchResults);
@@ -86,7 +86,7 @@ async function main() {
       logger.info(`\nAnalyzing: ${comp.name}`);
 
       const ddQueries = buildDeepDiveQueries(comp.name, idea, market);
-      allSearchQueries.push(...ddQueries);
+      allSearchQueries.push(...ddQueries.map(q => typeof q === 'string' ? q : q.q));
 
       const ddSearchResults = await runSearches(ddQueries);
       const ddContext = formatSearchContext(ddSearchResults);

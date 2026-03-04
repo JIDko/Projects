@@ -13,6 +13,7 @@ import {
 import { useAgentConfig } from '@/hooks/use-agent-config';
 import { WeightSlider } from '@/components/agents/weight-slider';
 import { ConfigSection } from '@/components/agents/config-section';
+import { RoboticEyes } from '@/components/command-center/robotic-eyes';
 
 interface WeightsConfig {
   [key: string]: number;
@@ -156,9 +157,9 @@ export default function AgentConfigPage({
   if (!agent) {
     return (
       <div className="space-y-6">
-        <Link href="/agents" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
+        <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
           <ArrowLeft className="h-4 w-4" />
-          Назад к агентам
+          Командный Центр
         </Link>
         <div className="glass-card p-12 text-center">
           <p className="text-muted-foreground">Агент не найден</p>
@@ -218,7 +219,9 @@ export default function AgentConfigPage({
   const scoringMeta = getSectionMeta(agentName, 'scoring');
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="relative min-h-screen p-8">
+      <RoboticEyes />
+    <div className="relative z-10 space-y-6 max-w-4xl">
       {/* Toast */}
       {toast && (
         <div className="fixed top-6 right-6 z-50 px-4 py-2.5 rounded-2xl bg-accent/20 border border-accent/30 text-accent text-sm font-medium transition-all duration-300">
@@ -230,11 +233,11 @@ export default function AgentConfigPage({
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <Link
-            href="/agents"
+            href="/"
             className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm mb-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Агенты
+            Командный Центр
           </Link>
           <h2 className="text-2xl font-semibold tracking-tight">
             {agent.display_name}
@@ -363,6 +366,7 @@ export default function AgentConfigPage({
           </div>
         </ConfigSection>
       )}
+    </div>
     </div>
   );
 }

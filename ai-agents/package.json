@@ -7,6 +7,7 @@
     "agent:niche": "tsx src/agents/niche-researcher/index.ts",
     "agent:validate": "tsx src/agents/business-validator/index.ts",
     "agent:competitive": "tsx src/agents/competitive-intel/index.ts",
+    "agent:architect": "tsx src/agents/product-architect/index.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

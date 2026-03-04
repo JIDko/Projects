@@ -1,4 +1,4 @@
-import useSWR from 'swr';
+import useSWR, { mutate as globalMutate } from 'swr';
 import type { AgentConfig } from '@/lib/types';
 import { fetcher } from '@/lib/fetcher';
 
@@ -19,7 +19,10 @@ export function useAgentConfig(name: string) {
 
   const triggerRun = async () => {
     const res = await fetch(`/api/agents/${name}/run`, { method: 'POST' });
-    return res.json();
+    const data = await res.json();
+    // Immediately revalidate cycles so the main page picks up the running state
+    globalMutate('/api/cycles');
+    return data;
   };
 
   return { agent: data, error, isLoading, mutate, updateConfig, triggerRun };

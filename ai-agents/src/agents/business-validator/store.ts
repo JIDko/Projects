@@ -3,6 +3,16 @@ import { logger } from '../../shared/logger.js';
 import type { ValidationReport } from './parse.js';
 
 export async function createCycle(searchQueries: string[], promptVersion: string = 'v1'): Promise<string> {
+  // If the web UI pre-created a cycle, reuse it
+  const preCycleId = process.env.CYCLE_ID;
+  if (preCycleId) {
+    await supabase.from('cycles').update({
+      search_queries_used: searchQueries,
+      prompt_version: promptVersion,
+    }).eq('id', preCycleId);
+    return preCycleId;
+  }
+
   const { data, error } = await supabase
     .from('cycles')
     .insert({

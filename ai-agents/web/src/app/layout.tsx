@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { Sidebar } from '@/components/layout/sidebar';
+import { FloatingNav } from '@/components/layout/floating-nav';
 import './globals.css';
 
 const inter = Inter({
@@ -23,8 +23,8 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased`}>
         <div className="mesh-gradient" aria-hidden="true" />
         <div className="mesh-gradient-extra" aria-hidden="true" />
-        <Sidebar />
-        <main className="relative z-10 ml-60 min-h-screen p-8">
+        <FloatingNav />
+        <main className="relative z-10 min-h-screen">
           {children}
         </main>
       </body>

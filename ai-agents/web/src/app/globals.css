@@ -14,6 +14,7 @@
   --color-destructive: #ef4444;
   --color-success: #10b981;
   --color-warning: #f59e0b;
+  --color-matrix-green: #00ff41;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
@@ -181,58 +182,23 @@ body {
   animation: shimmer 3s ease-in-out infinite;
 }
 
-/* ── Nav icon hover glow ──────────────────────────────── */
+/* ── Floating nav glitch effect ──────────────────────── */
 
-.nav-icon-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+@keyframes nav-glitch {
+  0% { transform: translate(0); filter: none; }
+  15% { transform: translate(-2px, 1px); filter: hue-rotate(90deg); }
+  30% { transform: translate(1px, -1px); filter: hue-rotate(-60deg); }
+  45% { transform: translate(-1px, -2px); filter: hue-rotate(180deg); }
+  60% { transform: translate(2px, 1px); filter: hue-rotate(-90deg); }
+  75% { transform: translate(-1px, 1px); filter: hue-rotate(120deg); }
+  100% { transform: translate(0); filter: none; }
 }
 
-.nav-icon-wrap::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 12px;
-  background: radial-gradient(circle, rgba(6, 182, 212, 0.3) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
+.nav-glitch-icon:hover {
+  animation: nav-glitch 0.4s ease;
 }
 
-.nav-link:hover .nav-icon-wrap::after {
-  opacity: 1;
-}
-
-.nav-link .nav-icon-wrap svg {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.nav-link:hover .nav-icon-wrap svg {
-  transform: scale(1.15);
-  filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.4));
-}
-
-.nav-link-active .nav-icon-wrap svg {
-  filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.5));
-}
-
-/* Active nav gradient left border */
-.nav-link-active {
-  position: relative;
-}
-
-.nav-link-active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: linear-gradient(180deg, #06b6d4, #8b5cf6);
-}
+/* (glitch overlay is canvas-based — no CSS keyframes needed) */
 
 /* ── Table row animations ─────────────────────────────── */
 
@@ -301,6 +267,147 @@ body {
 
 .sheet-backdrop-enter {
   animation: fade-in 0.2s ease both;
+}
+
+/* ── Neon wave border ────────────────────────────────── */
+
+@keyframes neon-wave {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.neon-border {
+  position: relative;
+  border-radius: 1.5rem;
+  padding: 2px;
+  background: linear-gradient(270deg, #06b6d4, #8b5cf6, #06b6d4, #8b5cf6);
+  background-size: 400% 400%;
+  animation: neon-wave 4s ease-in-out infinite;
+}
+
+.neon-border-inner {
+  background: rgba(24, 24, 27, 0.95);
+  border-radius: calc(1.5rem - 2px);
+  padding: 1.5rem;
+}
+
+/* ── Section expand/collapse ─────────────────────────── */
+
+.section-expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.section-expand.open {
+  grid-template-rows: 1fr;
+}
+
+.section-expand > .section-inner {
+  overflow: hidden;
+}
+
+/* ── Card stagger animation ──────────────────────────── */
+
+@keyframes card-appear {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.card-stagger:nth-child(1) { animation: card-appear 0.4s ease 0.05s both; }
+.card-stagger:nth-child(2) { animation: card-appear 0.4s ease 0.1s both; }
+.card-stagger:nth-child(3) { animation: card-appear 0.4s ease 0.15s both; }
+.card-stagger:nth-child(4) { animation: card-appear 0.4s ease 0.2s both; }
+.card-stagger:nth-child(5) { animation: card-appear 0.4s ease 0.25s both; }
+.card-stagger:nth-child(6) { animation: card-appear 0.4s ease 0.3s both; }
+.card-stagger:nth-child(7) { animation: card-appear 0.4s ease 0.35s both; }
+.card-stagger:nth-child(8) { animation: card-appear 0.4s ease 0.4s both; }
+.card-stagger:nth-child(9) { animation: card-appear 0.4s ease 0.45s both; }
+.card-stagger:nth-child(10) { animation: card-appear 0.4s ease 0.5s both; }
+.card-stagger:nth-child(11) { animation: card-appear 0.4s ease 0.55s both; }
+.card-stagger:nth-child(12) { animation: card-appear 0.4s ease 0.6s both; }
+
+/* ── Page drill-in ───────────────────────────────────── */
+
+@keyframes drill-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.page-drill-in {
+  animation: drill-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ── Bar grow animation ──────────────────────────────── */
+
+@keyframes bar-grow {
+  from { width: 0%; }
+}
+
+.bar-animated {
+  animation: bar-grow 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ── Score ring arc transition ───────────────────────── */
+
+.score-ring-arc {
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Niche card tilt ────────────────────────────────── */
+
+.niche-card-tilt {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* override glass-card hover transform — tilt handles it inline */
+.niche-card-tilt:hover {
+  transform: none;
+}
+
+/* ── Card matrix background ─────────────────────────── */
+
+/* hover: matrix chars get brighter */
+.group:hover .card-matrix-wrap pre {
+  opacity: 0.09 !important;
+  transition: opacity 0.6s ease;
+}
+
+/* Scanline sweep */
+@keyframes card-scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(500%); }
+}
+
+.card-scanline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 20%;
+  background: linear-gradient(to bottom, transparent, rgba(0, 255, 65, 0.06), transparent);
+  animation: card-scan 7s linear infinite;
+}
+
+/* ── Score pulse ─────────────────────────────────────── */
+
+@keyframes score-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(6, 182, 212, 0); }
 }
 
 /* ── Scrollbar styling ────────────────────────────────── */

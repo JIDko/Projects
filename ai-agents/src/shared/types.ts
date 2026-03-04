@@ -19,6 +19,14 @@ export interface Niche {
   status: 'active' | 'rejected' | 'archived';
   created_at?: string;
   source_pain_ids?: string[];
+  // v2 Signal Detector fields
+  evidence_summary?: string;
+  signal_count?: number;
+  unique_source_count?: number;
+  avg_pain_intensity?: number;
+  existing_competitors?: string[];
+  cluster_id?: string;
+  sample_signals?: string[];
 }
 
 export interface CompetitiveAnalysis {
